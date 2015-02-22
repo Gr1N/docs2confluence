@@ -27,11 +27,12 @@ class Location(object):
 
 
 class Page(object):
-    def __init__(self, id, template,
+    def __init__(self, id, parent_id, template,
                  confluence_user=None,
                  confluence_password=None,
                  confluence_domain=None):
         self.id = id
+        self.parent_id = parent_id
         self.template = template
         self.confluence_user = confluence_user
         self.confluence_password = confluence_password
@@ -40,30 +41,26 @@ class Page(object):
     def get(self):
         location = Location.CONTENT_BY_ID % {'id': self.id}
         url = '%s%s' % (self.confluence_domain, location,)
+
         response = requests.get(url, auth=(
             self.confluence_user, self.confluence_password,
         ))
 
-        status = response.status_code
-        if status == requests.codes.NOT_FOUND:
-            raise PageNotFound
-        elif status != requests.codes.OK:
-            raise Unexpected
-
-        return response.json()
+        return self.handle_response(response)
 
     def update(self):
         page = self.get()
 
         location = Location.CONTENT_BY_ID % {'id': self.id}
         url = '%s%s' % (self.confluence_domain, location,)
-        data = json.dumps({
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        data = {
             'id': self.id,
             'type': page['type'],
             'title': page['title'],
-            'space': {
-                'key': page['space']['key'],
-            },
+            'space': page['space'],
             'body': {
                 'storage': {
                     'value': self.template,
@@ -73,14 +70,20 @@ class Page(object):
             'version': {
                 'number': page['version']['number'] + 1,
             },
-        })
-        headers = {
-            'Content-Type': 'application/json',
         }
-        response = requests.put(url, data=data, headers=headers, auth=(
+        if self.parent_id:
+            data['ancestors'] = [{
+                'type': 'page',
+                'id': self.parent_id,
+            }]
+
+        response = requests.put(url, headers=headers, data=json.dumps(data), auth=(
             self.confluence_user, self.confluence_password,
         ))
 
+        return self.handle_response(response)
+
+    def handle_response(self, response):
         status = response.status_code
         if status == requests.codes.NOT_FOUND:
             raise PageNotFound
@@ -134,6 +137,7 @@ class Application(object):
             page_id = page['id']
             self.stdout.write('Processing page (%s)...\n' % page_id)
 
+            page_parent_id = page['parent_id']
             page_template = page['template']
 
             self.stdout.write('Converting to Confluence wiki format...\n')
@@ -142,7 +146,7 @@ class Application(object):
 
             self.stdout.write('Uploading to Confluence...\n')
             Page(
-                page_id, page_template,
+                page_id, page_parent_id, page_template,
                 confluence_user=s.confluence_user,
                 confluence_password=s.confluence_password,
                 confluence_domain=s.confluence_domain
