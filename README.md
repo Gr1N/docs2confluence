@@ -41,6 +41,7 @@ With env variables:
 - [ ] Tests...
 - [ ] Add CHANGELOG.md
 - [ ] Python 3.x support
+- [ ] Remove Ruby dependency
 
 
 # License
