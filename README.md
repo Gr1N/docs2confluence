@@ -37,7 +37,7 @@ With env variables:
 # TODO
 
 - [x] Handle network errors
-- [ ] Handle Confluence errors (404, 409, 500...)
+- [x] Handle Confluence errors (404, 409, 500...)
 - [ ] Tests...
 - [ ] Add CHANGELOG.md
 - [ ] Python 3.x support

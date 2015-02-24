@@ -167,6 +167,17 @@ class Application(object):
                 self.stderr.write('Confluence temporary unavailable.'
                                   ' Try later or check settings (%s)\n' % s)
                 sys.exit(os.EX_UNAVAILABLE)
+            except PageNotFound:
+                self.stderr.write('Page (%s) not found, check config\n' % page_id)
+                sys.exit(os.EX_CONFIG)
+            except PageConflict:
+                self.stderr.write('Got conflict response for page (%s),'
+                                  ' check config and try againg\n' % page_id)
+                sys.exit(os.EX_CONFIG)
+            except Unexpected:
+                self.stderr.write('Got unexpected response for page (%s),'
+                                  ' try later\n' % page_id)
+                sys.exit(os.EX_TEMPFAIL)
 
         self.stdout.write('Done.\n')
         sys.exit(os.EX_OK)
