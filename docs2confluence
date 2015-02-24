@@ -30,21 +30,22 @@ class Page(object):
     def __init__(self, id, parent_id, template,
                  confluence_user=None,
                  confluence_password=None,
-                 confluence_domain=None):
+                 confluence_domain=None,
+                 confluence_timeout=5.0):
         self.id = id
         self.parent_id = parent_id
         self.template = template
-        self.confluence_user = confluence_user
-        self.confluence_password = confluence_password
+        self.confluence_auth = (confluence_user, confluence_password,)
         self.confluence_domain = confluence_domain
+        self.confluence_timeout = confluence_timeout
 
     def get(self):
         location = Location.CONTENT_BY_ID % {'id': self.id}
         url = '%s%s' % (self.confluence_domain, location,)
 
-        response = requests.get(url, auth=(
-            self.confluence_user, self.confluence_password,
-        ))
+        response = requests.get(
+            url, timeout=self.confluence_timeout, auth=self.confluence_auth
+        )
 
         return self.handle_response(response)
 
@@ -77,9 +78,11 @@ class Page(object):
                 'id': self.parent_id,
             }]
 
-        response = requests.put(url, headers=headers, data=json.dumps(data), auth=(
-            self.confluence_user, self.confluence_password,
-        ))
+        response = requests.put(
+            url, headers=headers, data=json.dumps(data),
+            timeout=self.confluence_timeout,
+            auth=self.confluence_auth
+        )
 
         return self.handle_response(response)
 
@@ -112,6 +115,11 @@ class Application(object):
             '--confluence-domain', type=str,
             default=os.environ.get('CONFLUENCE_DOMAIN'),
             help='Confluence domain'
+        )
+        parser.add_argument(
+            '--confluence-timeout', type=str,
+            default=os.environ.get('CONFLUENCE_TIMEOUT', 5.0),
+            help='Confluence HTTP timeout'
         )
         parser.add_argument(
             '--markdown2confluence-path', type=str,
@@ -149,7 +157,8 @@ class Application(object):
                 page_id, page_parent_id, page_template,
                 confluence_user=s.confluence_user,
                 confluence_password=s.confluence_password,
-                confluence_domain=s.confluence_domain
+                confluence_domain=s.confluence_domain,
+                confluence_timeout=s.confluence_timeout
             ).update()
 
         self.stdout.write('Done.\n')
