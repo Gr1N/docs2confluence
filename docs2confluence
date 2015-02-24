@@ -153,15 +153,23 @@ class Application(object):
             page_template = output.stdout
 
             self.stdout.write('Uploading to Confluence...\n')
-            Page(
-                page_id, page_parent_id, page_template,
-                confluence_user=s.confluence_user,
-                confluence_password=s.confluence_password,
-                confluence_domain=s.confluence_domain,
-                confluence_timeout=s.confluence_timeout
-            ).update()
+            try:
+                Page(
+                    page_id, page_parent_id, page_template,
+                    confluence_user=s.confluence_user,
+                    confluence_password=s.confluence_password,
+                    confluence_domain=s.confluence_domain,
+                    confluence_timeout=s.confluence_timeout
+                ).update()
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    requests.exceptions.RequestException):
+                self.stderr.write('Confluence temporary unavailable.'
+                                  ' Try later or check settings (%s)\n' % s)
+                sys.exit(os.EX_UNAVAILABLE)
 
         self.stdout.write('Done.\n')
+        sys.exit(os.EX_OK)
 
 
 if __name__ == '__main__':

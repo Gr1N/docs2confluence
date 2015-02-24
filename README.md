@@ -36,7 +36,7 @@ With env variables:
 
 # TODO
 
-- [ ] Handle network errors
+- [x] Handle network errors
 - [ ] Handle Confluence errors (404, 409, 500...)
 - [ ] Tests...
 - [ ] Add CHANGELOG.md
