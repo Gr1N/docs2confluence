@@ -3,7 +3,7 @@
 Solution for uploading markdown formatted documents to [Atlassian Confluence](https://www.atlassian.com/software/confluence)
 
 
-# Install
+# Installation
 
 Install Ruby dependency...
 
